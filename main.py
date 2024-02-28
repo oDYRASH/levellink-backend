@@ -6,6 +6,9 @@ from dbAPI import *
 from sqlalchemy import desc
 
 
+@app.route("/", methods=["GET"])
+def ok():
+    return jsonify({"CODE": "200 OK"})
 
 @app.route("/profiles", methods=["GET"])
 def get_profiles():
@@ -55,18 +58,90 @@ def authUser():
 @app.route("/get_posts_by_user_ids", methods=["POST"])
 def get_posts_by_user_ids():
     user_ids = request.json.get("user_ids")  # Récupérer la liste des identifiants d'utilisateur depuis la requête POST
-    
+    print(user_ids)
     # Utiliser une seule requête pour récupérer les 2 derniers posts pour chaque utilisateur spécifié
     posts = []
+    limit_per_user = round( 30 / len(user_ids) ) +1
+    print(limit_per_user)
+    print(round(0.2))
     for user_id in user_ids:
-        user_posts = Post.query.filter_by(author_id=user_id).order_by(desc(Post.timestamp)).limit(2).all()
+        user_posts = Post.query.filter_by(author_id=user_id).order_by(desc(Post.timestamp)).limit(limit_per_user).all()
         posts.extend(user_posts)
     
     serialized_posts = [post.to_json() for post in posts]  # Sérialiser les posts en JSON
     
     return jsonify(serialized_posts)  # Retourner les posts sous forme JSON
 
+@app.route('/follow', methods=['POST'])
+def follow_user():
 
+    data = request.json
+    user_follower_id = data.get('user_follower_id')
+    user_followed_id = data.get('user_followed_id')
+
+    if user_follower_id is None or user_followed_id is None:
+        return jsonify({'error': 'user_follower_id and user_followed_id must be provided'}), 400
+
+    user_follower = Profile.query.filter_by(id=user_follower_id).first()
+    user_followed = Profile.query.filter_by(id=user_followed_id).first()
+
+    if user_follower is None or user_followed is None:
+        return jsonify({'error': 'One or both users do not exist'}), 404
+
+    if user_followed_id in user_follower.get_follows():
+        return jsonify({'error': 'Already Following'}), 404
+
+    new_follow = Follows(follower_id=user_follower_id, followed_id=user_followed_id)
+    
+    db.session.add(new_follow)
+    db.session.commit()
+
+    return user_follower.get_follows()
+
+
+@app.route('/unfollow', methods=['POST'])
+def unfollow_user():
+
+    data = request.json
+    user_follower_id = data.get('user_follower_id')
+    user_followed_id = data.get('user_followed_id')
+
+    if user_follower_id is None or user_followed_id is None:
+        return jsonify({'error': 'user_follower_id et user_followed_id doivent être fournis'}), 400
+
+    user_follower = Profile.query.filter_by(id=user_follower_id).first()
+    user_followed = Profile.query.filter_by(id=user_followed_id).first()
+
+    if user_follower is None or user_followed is None:
+        return jsonify({'error': 'One or both users do not exist'}), 404
+
+
+    follow_relationship = Follows.query.filter_by(follower_id=user_follower_id, followed_id=user_followed_id).first()
+    
+    if follow_relationship is None:
+        return jsonify({'message': 'L\'utilisateur {} ne suit pas l\'utilisateur {}'.format(user_follower_id, user_followed_id)}), 404
+
+    db.session.delete(follow_relationship)
+    db.session.commit()
+
+    return jsonify({'message': 'L\'utilisateur {} ne suit plus l\'utilisateur {}'.format(user_follower_id, user_followed_id)}), 200
+
+@app.route('/userfollows', methods=['GET'])
+def getFollows():
+    parametres_url = request.args
+
+    userId = parametres_url['userId']
+
+    USER = Profile.query.filter_by(id=userId).first()
+
+    return USER.get_follows()
+
+
+@app.route('/followconnection', methods=['GET'])
+def gf():
+
+    fs = Follows.query.all()
+    return [fj.to_json() for fj in fs]
 # @app.route("/create_contact", methods=["POST"])
 # def create_contact():
 #     first_name = request.json.get("firstName")
