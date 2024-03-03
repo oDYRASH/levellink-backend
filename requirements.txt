@@ -3,3 +3,4 @@ Flask-SQLAlchemy
 flask_cors
 requests
 datetime
+dotenv
