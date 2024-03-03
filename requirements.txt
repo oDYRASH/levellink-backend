@@ -4,4 +4,3 @@ flask_cors
 requests
 functools
 datetime
-os
