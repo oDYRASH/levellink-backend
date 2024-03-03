@@ -26,8 +26,9 @@ def test():
 
 @app.route("/get_csrf")
 def csrf_T():
+    
     csrf_token = auth.assign_CSRF_to_USER(123456789)
-    print(f"NEW csrfGen = {csrf_token}")
+
     response = auth.make_csrf_setting_response(csrf_token, 90)
 
     return response
