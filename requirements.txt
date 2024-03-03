@@ -2,7 +2,6 @@ flask
 Flask-SQLAlchemy
 flask_cors
 requests
-secrets
 functools
 datetime
 os
