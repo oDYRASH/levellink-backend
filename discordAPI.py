@@ -33,7 +33,8 @@ def exchange_code(code):
     )
 
     if response.status_code != 200:
-        return None
+        print("While getting user", response.status_code)
+        return response.status_code
     
     try:
         access_token = response.json().get('access_token')

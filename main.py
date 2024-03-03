@@ -1,4 +1,4 @@
-from flask import request, jsonify, url_for, make_response, abort
+from flask import request, jsonify, url_for, redirect
 from config import app, db
 from models import Profile, Follows, Post
 from discordAPI import exchange_code
@@ -6,7 +6,7 @@ from dbAPI import *
 from sqlalchemy import desc
 import json
 from functools import wraps
-
+import settings
 import auth
 
 
@@ -17,7 +17,7 @@ def has_no_empty_params(rule):
 
 
 @app.route("/need_csrf")
-# @auth.csrf_auth_required
+@auth.csrf_auth_required
 def test():
 
     csrf_token = request.cookies.get('csrf_token')
@@ -88,7 +88,7 @@ def authUser():
 
     if(not userExist(user_data["id"])) :
         userCreated = createUser(user_data)
-        return f'Used has been created : {userCreated}'
+        return  redirect(settings.FRONTEND_BASE_ROUTE)
     
     return user_data
 
