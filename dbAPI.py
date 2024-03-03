@@ -1,4 +1,4 @@
-from models import *
+from models import Profile, DiscordUser, Connection
 from config import db
 
 
@@ -8,20 +8,22 @@ def userExist(discordUserId):
 
     return True if user else False
 
+
 def createUser(discordUser):
 
     newProfile = Profile(
         discord_user_id = discordUser['id'],
         user = DiscordUser(
             id=discordUser['id'],
-            global_name=discordUser['global_name'],
+            global_name=discordUser['username'],
             avatar=discordUser['avatar'],
             public_flags=discordUser['public_flags'],
             flags=discordUser['flags'],
             locale=discordUser['locale'],
             mfa_enabled=discordUser['mfa_enabled'],
-            connections=[Connection(**conn) for conn in discordUser["connections"]]
-
+            connections=[
+                Connection(**conn) for conn in discordUser["connections"]
+                ]
         )
     )
 

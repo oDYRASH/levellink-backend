@@ -1,0 +1,41 @@
+{
+    "profiles": [
+        {
+            "discord_user_id": 220139887347761153,
+            "id": 1,
+            "user": {
+                "avatar": "cb97527e5413f2ee571528cf972c640e",
+                "connections": [
+                    {
+                        "name": "DYRASH#CSGO",
+                        "type": "leagueoflegends"
+                    },
+                    {
+                        "name": "DYRASH#CSGO",
+                        "type": "riotgames"
+                    }
+                ],
+                "flags": 64,
+                "global_name": "Dyrash",
+                "id": 220139887347761153,
+                "locale": "fr",
+                "mfa_enabled": false,
+                "public_flags": 64
+            }
+        },
+        {
+            "discord_user_id": 417789076834484224,
+            "id": 2,
+            "user": {
+                "avatar": "21da5fb5397496dae225b0bc47cca217",
+                "connections": [],
+                "flags": 0,
+                "global_name": null,
+                "id": 417789076834484224,
+                "locale": "en-US",
+                "mfa_enabled": false,
+                "public_flags": 0
+            }
+        }
+    ]
+}

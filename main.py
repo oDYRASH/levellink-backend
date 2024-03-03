@@ -1,14 +1,50 @@
-from flask import request, jsonify
+from flask import request, jsonify, url_for, make_response, abort
 from config import app, db
-from models import Profile
-from discordAPI import getDiscordUser
+from models import Profile, Follows, Post
+from discordAPI import exchange_code
 from dbAPI import *
 from sqlalchemy import desc
+import json
+from functools import wraps
+
+import auth
 
 
-@app.route("/", methods=["GET"])
-def ok():
-    return jsonify({"CODE": "200 OK"})
+def has_no_empty_params(rule):
+    defaults = rule.defaults if rule.defaults is not None else ()
+    arguments = rule.arguments if rule.arguments is not None else ()
+    return len(defaults) >= len(arguments)
+
+
+@app.route("/need_csrf")
+# @auth.csrf_auth_required
+def test():
+
+    csrf_token = request.cookies.get('csrf_token')
+
+    return f"csrf_token = {csrf_token}"
+
+@app.route("/get_csrf")
+def csrf_T():
+    csrf_token = auth.assign_CSRF_to_USER(123456789)
+    print(f"NEW csrfGen = {csrf_token}")
+    response = auth.make_csrf_setting_response(csrf_token, 90)
+
+    return response
+
+@app.route("/")
+def site_map():
+    links = []
+    for rule in app.url_map.iter_rules():
+        # Filter out rules we can't navigate to in a browser
+        # and rules that require parameters
+        if "GET" in rule.methods and has_no_empty_params(rule):
+            url = url_for(rule.endpoint, **(rule.defaults or {}))
+            links.append((url, rule.endpoint))
+    # links is now a list of url, endpoint tuples
+
+    return ''.join(route+"<br/>" for route in [link[0] for link in links])
+
 
 @app.route("/profiles", methods=["GET"])
 def get_profiles():
@@ -41,29 +77,29 @@ def createPost():
 @app.route("/authUser", methods=["GET"])
 def authUser():
     
-    parametres_url = request.args
+    # Récupérer l'access_token de l'URL
+    code = request.args.get('code')
 
+    user_data = exchange_code(code)
+
+    if not user_data : 
+        return "Failed to get discord User"
     # Vérifier si le paramètre "access_token" est présent
-    if 'access_token' in parametres_url:
 
-        discordUser = getDiscordUser(parametres_url['access_token'])
-        if(not userExist(discordUser["id"])) :
-            userCreated = createUser(discordUser)
-            return f'Used has been created : {userCreated}'
-        return discordUser
-    else:
-        return "You Don't Come From A Discord Auth Redirect (TOKEN)"
+    if(not userExist(user_data["id"])) :
+        userCreated = createUser(user_data)
+        return f'Used has been created : {userCreated}'
+    
+    return user_data
 
 
 @app.route("/get_posts_by_user_ids", methods=["POST"])
 def get_posts_by_user_ids():
     user_ids = request.json.get("user_ids")  # Récupérer la liste des identifiants d'utilisateur depuis la requête POST
-    print(user_ids)
     # Utiliser une seule requête pour récupérer les 2 derniers posts pour chaque utilisateur spécifié
     posts = []
     limit_per_user = round( 30 / len(user_ids) ) +1
-    print(limit_per_user)
-    print(round(0.2))
+
     for user_id in user_ids:
         user_posts = Post.query.filter_by(author_id=user_id).order_by(desc(Post.timestamp)).limit(limit_per_user).all()
         posts.extend(user_posts)
@@ -126,6 +162,7 @@ def unfollow_user():
 
     return jsonify({'message': 'L\'utilisateur {} ne suit plus l\'utilisateur {}'.format(user_follower_id, user_followed_id)}), 200
 
+
 @app.route('/userfollows', methods=['GET'])
 def getFollows():
     parametres_url = request.args
@@ -134,7 +171,48 @@ def getFollows():
 
     USER = Profile.query.filter_by(id=userId).first()
 
+    if not USER: 
+        return jsonify({"ERROR":"NO USER HAVE THIS ID"}), 404
+
     return USER.get_follows()
+
+
+
+@app.route('/search-user', methods=['GET'])
+def get_user_by_partial_name():
+    parametres_url = request.args
+
+    partialName = parametres_url['partialName']
+
+
+    # Recherche des profils d'utilisateurs correspondant au nom partiel
+    searchResults = Profile.query.join(DiscordUser).filter(DiscordUser.global_name.ilike(f"%{partialName}%")).all()
+
+    # searchResults = Profile.query.filter(Profile.user.contains(partialName))
+
+    s = Profile.query.all()
+    return [profile.get_name() for profile in searchResults]
+
+@app.route('/dsoqiufhdsqiopugfhjdshjgsdqpiugdsqivb', methods=['GET'])
+def _():
+    Profile.query.delete()
+
+# Confirmer la suppression en effectuant un commit
+    db.session.commit()
+
+    s = Profile.query.all()
+    return [profile.to_json() for profile in s]
+
+@app.route('/sqfhoiudsqnfaazsfdfdddddddddddddddd', methods=['GET'])
+def _ok():
+    DiscordUser.query.delete()
+
+# Confirmer la suppression en effectuant un commit
+    db.session.commit()
+
+    s = DiscordUser.query.all()
+    return [profile.to_json() for profile in s]
+
 
 
 @app.route('/followconnection', methods=['GET'])
@@ -142,6 +220,46 @@ def gf():
 
     fs = Follows.query.all()
     return [fj.to_json() for fj in fs]
+
+@app.route('/resetdb', methods=['GET'])
+def clear_data():
+    meta = db.metadata
+    for table in reversed(meta.sorted_tables):
+        print ('Clear table %s' % table)
+        db.session.execute(table.delete())
+    db.session.commit()
+
+    return "OK"
+
+@app.route('/get-table-content', methods=["GET"])
+def getTableContent():
+    tablename = request.args['tableName']
+
+    try:
+
+        all_table = db.metadata.sorted_tables
+
+        table = next((table for table in all_table if table.name == tablename), None)
+        
+        if table != None:
+            # Créez une classe modèle pour la table
+            class Model(db.Model):
+                __table__ = table
+            
+            # Récupérez le contenu de la table en utilisant la classe modèle
+            table_content = Model.query.all()
+
+            print(table_content)
+            return [item.to_json() for item in table_content]
+
+        return f"NO TABLE FOUND FOR {tablename}"
+        # theTable= 
+        # theTable.query.all()
+        # return [fj.to_json() for fj in fs]
+    except (KeyError, json.JSONDecodeError) as e:
+        return f"ERROR MEET {e}"
+
+
 # @app.route("/create_contact", methods=["POST"])
 # def create_contact():
 #     first_name = request.json.get("firstName")

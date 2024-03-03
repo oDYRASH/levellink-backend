@@ -1,21 +1,5 @@
 from config import db
 
-
-class Contact(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(80), unique=False, nullable=False)
-    last_name = db.Column(db.String(80), unique=False, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-
-    def to_json(self):
-        return {
-            "id": self.id,
-            "firstName": self.first_name,
-            "lastName": self.last_name,
-            "email": self.email,
-        }
-
-
 class Connection(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
@@ -63,19 +47,48 @@ class Follows(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     follower_id = db.Column(db.Integer, db.ForeignKey('profile.id'))
     followed_id = db.Column(db.Integer, db.ForeignKey('profile.id'))
+    
+    def to_json(self):
+        return {
+            "id":self.id,
+            "follower_id":self.follower_id,
+            "followed_id":self.followed_id
+        }
+
 
 class Profile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     discord_user_id = db.Column(db.BigInteger, db.ForeignKey('discord_user.id'))
     user = db.relationship('DiscordUser', backref='profile')
-    follows = db.relationship('Profile', secondary='follows', primaryjoin=id == Follows.followed_id, secondaryjoin=id == Follows.follower_id, backref='followed_by')
+    follows = db.relationship('Profile', secondary='follows', primaryjoin=id == Follows.followed_id, secondaryjoin=id == Follows.follower_id, backref='followed_by', cascade='all, delete-orphan', single_parent=True )
    
+    def get_name(self):
+        return self.user.global_name
+
+    def get_follows(self):
+        return [follow.id for follow in self.follows]
+
     def to_json(self):
         return {
             'discord_user_id': self.discord_user_id,
             'id': self.id,
             'user': self.user.to_json()
         }
+    
+    def follow(self, user):
+        if not self.is_following(user):
+            self.follows.append(user)
+            # return self
+
+    def unfollow(self, user):
+        if self.is_following(user):
+            self.follows.remove(user)
+            return self
+
+    def is_following(self, user):
+        print(self.follows)
+        # return self.follows.filter(followers.c.follows_id == user.id).count() > 0
+
 
 
 class Comment(db.Model):
