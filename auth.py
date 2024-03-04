@@ -62,7 +62,7 @@ def make_csrf_setting_response(csrf_token, live_time_in_days):
     expires = datetime.datetime.strftime(datetime.datetime.utcnow() + datetime.timedelta(seconds=max_age), "%a, %d-%b-%Y %H:%M:%S GMT")
     
     response = make_response()
-    response.set_cookie("csrf_token", csrf_token, max_age=max_age, expires=expires)
+    response.set_cookie("csrf_token", csrf_token, max_age=max_age, expires=expires, domain='.levellink.lol', secure=True, httponly=True)
 
     response.status_code = 200
 
