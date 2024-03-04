@@ -10,6 +10,56 @@ import settings
 import auth
 
 
+
+@app.route("/logout", methods=["GET"])
+def delete_csrf():
+    response = redirect(settings.FRONTEND_BASE_ROUTE + "/login")
+    response.delete_cookie("csrf_token")
+    return response, 200
+
+###############################################################################################
+###############################################################################################
+##################################### AUTH USER METHODS #######################################
+###############################################################################################
+###############################################################################################
+
+@app.route("/userPosts", methods=["GET"])
+@auth.csrf_auth_required
+def get_user_posts():
+    csrf_token = request.cookies.get('csrf_token')
+    token_enregistre = auth.CSRFToken.query.filter_by(csrf_token=csrf_token).first()
+
+    if token_enregistre:
+
+        user_Profile = Profile.query.filter_by(user_id=token_enregistre.user_id).first()
+        posts = Post.query.filter_by(author_id=user_Profile.id).order_by(desc(Post.timestamp)).limit(10).all()
+        json_posts = [post.to_json() for post in posts]
+
+        return json_posts, 200
+
+    return "Invalid CSRF token", 401
+
+
+@app.route("/user", methods=["GET"])
+@auth.csrf_auth_required
+def get_authed_user():
+
+    csrf_token = request.cookies.get('csrf_token')
+    print("CSRF TOKEN :", csrf_token)
+    token_enregistre = auth.CSRFToken.query.filter_by(csrf_token=csrf_token).first()
+
+    if token_enregistre:
+        user_Profile = Profile.query.filter_by(user_id=token_enregistre.user_id).first()
+        return user_Profile.to_json(), 200
+    
+    return "Invalid CSRF token", 403
+    
+###############################################################################################
+###############################################################################################
+###################################### ADMIN THINGS  ##########################################
+###############################################################################################
+###############################################################################################
+
 def has_no_empty_params(rule):
     defaults = rule.defaults if rule.defaults is not None else ()
     arguments = rule.arguments if rule.arguments is not None else ()
@@ -34,6 +84,7 @@ def csrf_T():
     return response
 
 @app.route("/")
+@auth.csrf_auth_required
 def site_map():
     links = []
     for rule in app.url_map.iter_rules():
@@ -48,6 +99,7 @@ def site_map():
 
 
 @app.route("/profiles", methods=["GET"])
+@auth.csrf_auth_required
 def get_profiles():
     profiles = Profile.query.all()
     json_profiles = list(map(lambda x: x.to_json(), profiles))
@@ -55,16 +107,21 @@ def get_profiles():
 
 
 @app.route("/posts", methods=["GET"])
+@auth.csrf_auth_required
 def get_posts():
     posts = Post.query.all()
     json_posts = list(map(lambda x: x.to_json(), posts))
     return jsonify({"posts": json_posts})
 
-@app.route("/create_post", methods=["POST"])
-def createPost():
+
+@app.route("/createPost", methods=["GET"])
+@auth.csrf_auth_required
+def createPost(token_enregistre):
+
+    print("CATCHED after deecoration : ", token_enregistre)#token_enregistre.user_id) 
 
     newPost = Post(
-        author_id = request.json.get("author_id"),
+        author_id = token_enregistre.user_id,
         title = request.json.get("title"),
         description =  request.json.get("description")
     )
@@ -72,7 +129,7 @@ def createPost():
     db.session.add(newPost)
     db.session.commit()
 
-    return jsonify({"post": "oui"})
+    return jsonify(newPost.to_json()), 201
 
 
 @app.route("/authUser", methods=["GET"])
@@ -179,20 +236,23 @@ def getFollows():
 
 
 
+
+
 @app.route('/search-user', methods=['GET'])
 def get_user_by_partial_name():
+    # Recherche des profils d'utilisateurs correspondant au nom partiel
     parametres_url = request.args
-
     partialName = parametres_url['partialName']
 
+    if partialName == "":
+        return []
+        
 
     # Recherche des profils d'utilisateurs correspondant au nom partiel
-    searchResults = Profile.query.join(DiscordUser).filter(DiscordUser.global_name.ilike(f"%{partialName}%")).all()
+    searchResults = Profile.query.join(DiscordUser).filter(DiscordUser.global_name.ilike(f"%{partialName}%")).limit(5).all()
 
-    # searchResults = Profile.query.filter(Profile.user.contains(partialName))
+    return [{"id": str(profile.discord_user_id), "avatar": profile.user.avatar, "name": profile.user.global_name.capitalize()} for profile in searchResults]
 
-    s = Profile.query.all()
-    return [profile.get_name() for profile in searchResults]
 
 @app.route('/dsoqiufhdsqiopugfhjdshjgsdqpiugdsqivb', methods=['GET'])
 def _():

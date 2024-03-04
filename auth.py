@@ -44,14 +44,14 @@ def csrf_auth_required(f):
         csrf_token = request.cookies.get('csrf_token')
 
         #pas de Token
-        if not csrf_token : return redirect(settings.FRONTEND_BASE_ROUTE + "/login")
+        if csrf_token == None : return "No csrf set in this session" #redirect(settings.FRONTEND_BASE_ROUTE + "/login")
          
         token_enregistre = CSRFToken.query.filter_by(csrf_token=csrf_token).first()
 
         #bad Token
-        if not token_enregistre : return redirect(settings.FRONTEND_BASE_ROUTE + "/login")    
+        if not token_enregistre : return "csrf NON valid" #redirect(settings.FRONTEND_BASE_ROUTE + "/login")    
 
-        return f(*args, **kwargs)
+        return f(token_enregistre, *args, **kwargs)
     
     return decorateur
 
@@ -63,5 +63,7 @@ def make_csrf_setting_response(csrf_token, live_time_in_days):
     
     response = make_response()
     response.set_cookie("csrf_token", csrf_token, max_age=max_age, expires=expires)
+
+    response.status_code = 200
 
     return response
