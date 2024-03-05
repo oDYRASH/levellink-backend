@@ -23,8 +23,6 @@ def authUser():
     if not user_data : 
         return redirect(settings.FRONTEND_BASE_ROUTE + "/login")
 
-
-
     csrf_token = auth.assign_CSRF_to_USER(user_data["id"])
     response = auth.make_csrf_setting_response(csrf_token, 90)
 
@@ -72,11 +70,7 @@ def get_user_posts():
 
 @app.route("/auth/user", methods=["GET"])
 @auth.csrf_auth_required
-def get_authed_user():
-
-    csrf_token = request.cookies.get('csrf_token')
-    print("CSRF TOKEN :", csrf_token)
-    token_enregistre = auth.CSRFToken.query.filter_by(csrf_token=csrf_token).first()
+def get_authed_user(token_enregistre):
 
     if token_enregistre:
         user_Profile = Profile.query.filter_by(user_id=token_enregistre.user_id).first()
@@ -306,6 +300,9 @@ def csrf_T():
     csrf_token = auth.assign_CSRF_to_USER(123456789)
     print(csrf_token)
     response = auth.make_csrf_setting_response(csrf_token, 90)
+    response.headers['Location'] = "http://127.0.0.1:5173/"
+    response.status_code = 302
+
     return response
 
 
