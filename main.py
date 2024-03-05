@@ -105,6 +105,12 @@ def site_map():
     return ''.join(route+"<br/>" for route in [link[0] for link in links])
 
 
+#route pour voir tous les CSRF enregistrés
+@app.route("/csrf", methods=["GET"])
+def get_csrf():
+    tokens = auth.CSRFToken.query.all()
+    return jsonify([token.to_json() for token in tokens])
+
 @app.route("/profiles", methods=["GET"])
 def get_profiles():
     profiles = Profile.query.all()

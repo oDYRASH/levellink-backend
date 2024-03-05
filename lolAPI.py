@@ -2,8 +2,10 @@ import requests
 from helper import transform_region
 from utils import get_last_session_games
 from playerStats import LolGame
+import settings
 
-api_key = "RGAPI-e6301fea-4bf0-4232-b699-1ee55cd2edbb"
+
+api_key = settings.LOL_API_KEY
 
 async def get_summoner(region, name):
     response = requests.get(
