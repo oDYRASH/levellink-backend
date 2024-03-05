@@ -19,6 +19,15 @@ class CSRFToken(db.Model):
 def assign_CSRF_to_USER(user_id) -> str:
     csrf_token = secrets.token_hex(16)  # Génère un jeton CSRF aléatoire
 
+    #if token already exist
+    token_enregistre = CSRFToken.query.filter_by(user_id=user_id).first()  
+    if token_enregistre:
+        token_enregistre.csrf_token = csrf_token
+        db.session.commit()
+        return csrf_token
+    
+
+    #else create a new one
     nouveau_token = CSRFToken(user_id=user_id, csrf_token=csrf_token)
     db.session.add(nouveau_token)
     db.session.commit()
