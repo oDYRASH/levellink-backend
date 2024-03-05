@@ -30,10 +30,14 @@ def authUser():
         createUser(user_data)
         response.headers['Location'] = settings.FRONTEND_BASE_ROUTE
         response.status_code = 302
+
+        return response
+
     else:
         response.headers['Location'] = settings.FRONTEND_BASE_ROUTE
         response.status_code = 302
 
+        return response
 
 
 @app.route("/logout", methods=["GET"])
