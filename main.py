@@ -66,22 +66,6 @@ def has_no_empty_params(rule):
     return len(defaults) >= len(arguments)
 
 
-@app.route("/need_csrf")
-@auth.csrf_auth_required
-def test():
-
-    csrf_token = request.cookies.get('csrf_token')
-
-    return f"csrf_token = {csrf_token}"
-
-@app.route("/get_csrf")
-def csrf_T():
-    
-    csrf_token = auth.assign_CSRF_to_USER(123456789)
-
-    response = auth.make_csrf_setting_response(csrf_token, 90)
-
-    return response
 
 @app.route("/")
 @auth.csrf_auth_required
@@ -319,6 +303,26 @@ def getTableContent():
         # return [fj.to_json() for fj in fs]
     except (KeyError, json.JSONDecodeError) as e:
         return f"ERROR MEET {e}"
+
+##########TESTS####################
+@app.route("/need_csrf")
+def test():
+
+    csrf_token = request.cookies.get('csrf_token')
+    print(csrf_token)
+
+    return f"csrf_token = {csrf_token}"
+
+@app.route("/get_csrf")
+def csrf_T():
+    
+    csrf_token = auth.assign_CSRF_to_USER(123456789)
+    print(csrf_token)
+    response = auth.make_csrf_setting_response(csrf_token, 90)
+    response.text = csrf_token
+    return response
+
+
 
 
 # @app.route("/create_contact", methods=["POST"])
