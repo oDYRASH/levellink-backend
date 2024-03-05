@@ -11,6 +11,31 @@ import auth
 
 
 
+
+@app.route("/authUser", methods=["GET"])
+def authUser():
+
+    # Récupérer l'access_token de l'URL
+    discordAuthCode = request.args.get('code')
+
+    user_data = exchange_code(discordAuthCode)
+
+    if not user_data : 
+        return redirect(settings.FRONTEND_BASE_ROUTE + "/login")
+
+    csrf_token = auth.assign_CSRF_to_USER(user_data["id"])
+    response = auth.make_csrf_setting_response(csrf_token, 90)
+
+    if not userExist(user_data["id"]):
+        createUser(user_data)
+        response.headers['Location'] = settings.FRONTEND_BASE_ROUTE
+        response.status_code = 302
+    else:
+        response.headers['Location'] = settings.FRONTEND_BASE_ROUTE
+        response.status_code = 302
+
+
+
 @app.route("/logout", methods=["GET"])
 def delete_csrf():
     response = redirect(settings.FRONTEND_BASE_ROUTE + "/login")
@@ -110,24 +135,6 @@ def createPost(token_enregistre):
 
     return jsonify(newPost.to_json()), 201
 
-
-@app.route("/authUser", methods=["GET"])
-def authUser():
-    
-    # Récupérer l'access_token de l'URL
-    code = request.args.get('code')
-
-    user_data = exchange_code(code)
-
-    if not user_data : 
-        return "Failed to get discord User"
-    # Vérifier si le paramètre "access_token" est présent
-
-    if(not userExist(user_data["id"])) :
-        userCreated = createUser(user_data)
-        return  redirect(settings.FRONTEND_BASE_ROUTE)
-    
-    return user_data
 
 
 @app.route("/get_posts_by_user_ids", methods=["POST"])
@@ -271,33 +278,6 @@ def clear_data():
 
     return "OK"
 
-@app.route('/get-table-content', methods=["GET"])
-def getTableContent():
-    tablename = request.args['tableName']
-
-    try:
-
-        all_table = db.metadata.sorted_tables
-
-        table = next((table for table in all_table if table.name == tablename), None)
-        
-        if table != None:
-            # Créez une classe modèle pour la table
-            class Model(db.Model):
-                __table__ = table
-            
-            # Récupérez le contenu de la table en utilisant la classe modèle
-            table_content = Model.query.all()
-
-            print(table_content)
-            return [item.to_json() for item in table_content]
-
-        return f"NO TABLE FOUND FOR {tablename}"
-        # theTable= 
-        # theTable.query.all()
-        # return [fj.to_json() for fj in fs]
-    except (KeyError, json.JSONDecodeError) as e:
-        return f"ERROR MEET {e}"
 
 ##########TESTS####################
 @app.route("/need_csrf")
