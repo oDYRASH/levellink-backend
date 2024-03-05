@@ -24,7 +24,6 @@ def delete_csrf():
 ###############################################################################################
 
 @app.route("/userPosts", methods=["GET"])
-@auth.csrf_auth_required
 def get_user_posts():
     csrf_token = request.cookies.get('csrf_token')
     token_enregistre = auth.CSRFToken.query.filter_by(csrf_token=csrf_token).first()
@@ -40,7 +39,7 @@ def get_user_posts():
     return "Invalid CSRF token", 401
 
 
-@app.route("/user", methods=["GET"])
+@app.route("/auth/user", methods=["GET"])
 @auth.csrf_auth_required
 def get_authed_user():
 
@@ -68,7 +67,6 @@ def has_no_empty_params(rule):
 
 
 @app.route("/")
-@auth.csrf_auth_required
 def site_map():
     links = []
     for rule in app.url_map.iter_rules():
@@ -83,7 +81,6 @@ def site_map():
 
 
 @app.route("/profiles", methods=["GET"])
-@auth.csrf_auth_required
 def get_profiles():
     profiles = Profile.query.all()
     json_profiles = list(map(lambda x: x.to_json(), profiles))
@@ -91,7 +88,6 @@ def get_profiles():
 
 
 @app.route("/posts", methods=["GET"])
-@auth.csrf_auth_required
 def get_posts():
     posts = Post.query.all()
     json_posts = list(map(lambda x: x.to_json(), posts))
@@ -99,7 +95,6 @@ def get_posts():
 
 
 @app.route("/createPost", methods=["GET"])
-@auth.csrf_auth_required
 def createPost(token_enregistre):
 
     print("CATCHED after deecoration : ", token_enregistre)#token_enregistre.user_id) 
@@ -323,6 +318,62 @@ def csrf_T():
     return response
 
 
+##############League of Legends API####################
+from lolAPI import *
+# Route Summoner: /summoner?region=<region>&name=<summoner_name>
+@app.route('/summoner', methods=['GET'])
+async def summoner():
+    region = request.args.get('region')
+    name = request.args.get('name')
+    summoner_data = await get_summoner(region, name)
+    return jsonify(summoner_data)
+
+# Route Rank: /rank?region=<region>&id=<summoner_id>
+@app.route('/rank', methods=['GET'])
+async def rank():
+    region = request.args.get('region')
+    id = request.args.get('id')
+    rank_data = await get_rank(region, id)
+    return jsonify(rank_data)
+
+# Route Mastery: /mastery?region=<region>&id=<summoner_id>
+@app.route('/mastery', methods=['GET'])
+async def mastery():
+    region = request.args.get('region')
+    id = request.args.get('id')
+    mastery_data = await get_mastery_points(region, id)
+    return jsonify(mastery_data)
+
+# Route Matches: /matches?region=<region>&puuid=<summoner_puuid>&page=<page_number>
+@app.route('/matches', methods=['GET'])
+async def matches():
+    region = request.args.get('region')
+    puuid = request.args.get('puuid')
+    page = request.args.get('page', 17, type=int)
+    matches_data = await get_all_matches(region, puuid, page)
+    return jsonify(matches_data)
+
+# Route Match: /match?region=<region>&match_id=<match_id>
+@app.route('/match', methods=['GET'])
+async def match():
+    region = request.args.get('region')
+    match_id = request.args.get('match_id')
+    match_data = await get_match(region, match_id)
+    return jsonify(match_data)
+
+# Route Session Games: /session_games?lol_user_name=<summoner_name>
+@app.route('/session_games', methods=['GET'])
+async def session_games():
+    lol_user_name = request.args.get('lol_user_name')
+    session_games_data = await get_session_games(lol_user_name)
+    return jsonify(session_games_data)
+
+# Route User Rank: /user_rank?lol_user_name=<summoner_name>
+@app.route('/user_rank', methods=['GET'])
+async def user_rank():
+    lol_user_name = request.args.get('lol_user_name')
+    user_rank_data = await get_user_rank(lol_user_name)
+    return jsonify(user_rank_data)
 
 
 # @app.route("/create_contact", methods=["POST"])
