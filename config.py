@@ -4,7 +4,8 @@ from flask_cors import CORS
 
 
 app = Flask("app")
-CORS(app)
+
+CORS(app, origins=["https://backend.levellink.lol", "https://levellink.lol"])
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///mydatabase.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
