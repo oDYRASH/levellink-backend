@@ -12,6 +12,9 @@ class CSRFToken(db.Model):
     user_id = db.Column(db.BigInteger, unique=True, nullable=False)
     csrf_token = db.Column(db.String(32), nullable=False)
 
+    def to_json(self):
+        return {"id": self.id, "user_id": self.user_id, "csrf_token": self.csrf_token}
+
 
 def assign_CSRF_to_USER(user_id) -> str:
     csrf_token = secrets.token_hex(16)  # Génère un jeton CSRF aléatoire
