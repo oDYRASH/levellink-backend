@@ -14,7 +14,7 @@ class Connection(db.Model):
 
 discord_user_connection = db.Table('discord_user_connection',
     db.Column('id', db.Integer, primary_key=True),
-    db.Column('discord_user_id', db.BigInteger, db.ForeignKey('discord_user.id')),
+    db.Column('discord_user_id', db.String(18), db.ForeignKey('discord_user.id')),
     db.Column('connection_id', db.Integer, db.ForeignKey('connection.id'))
 )
 
@@ -58,7 +58,7 @@ class Follows(db.Model):
 
 class Profile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    discord_user_id = db.Column(db.BigInteger, db.ForeignKey('discord_user.id'))
+    discord_user_id = db.Column(db.String(18), db.ForeignKey('discord_user.id'))
     user = db.relationship('DiscordUser', backref='profile')
     follows = db.relationship('Profile', secondary='follows', primaryjoin=id == Follows.followed_id, secondaryjoin=id == Follows.follower_id, backref='followed_by', cascade='all, delete-orphan', single_parent=True )
    

@@ -9,9 +9,11 @@ from functools import wraps
 import settings
 import auth
 
-
-
-
+###############################################################################################
+###############################################################################################
+##################################### AUTH USER ROUTES ########################################
+###############################################################################################
+###############################################################################################
 @app.route("/authUser", methods=["GET"])
 def authUser():
 
@@ -39,15 +41,6 @@ def authUser():
 
         return response
 
-@app.route("/auth/user", methods=["GET"])
-@auth.csrf_auth_required
-def get_authed_user(token_enregistre):
-
-    if token_enregistre:
-        user_Profile = Profile.query.filter_by(discord_user_id=token_enregistre.discord_user_id).first()
-        return user_Profile.to_json(), 200
-    
-    return "Invalid CSRF token", 403
 
 @app.route("/logout", methods=["GET"])
 def delete_csrf():
@@ -61,14 +54,26 @@ def delete_csrf():
 ###############################################################################################
 ###############################################################################################
 
-@app.route("/userPosts", methods=["GET"])
-def get_user_posts():
-    csrf_token = request.cookies.get('csrf_token')
-    token_enregistre = auth.CSRFToken.query.filter_by(csrf_token=csrf_token).first()
+
+@app.route("/auth/user", methods=["GET"])
+@auth.csrf_auth_required
+def get_authed_user(token_enregistre):
+
+    if token_enregistre:
+        user_Profile = Profile.query.filter_by(discord_user_id=token_enregistre.discord_user_id).first()
+        return user_Profile.to_json(), 200
+    
+    return "Invalid CSRF token", 403
+
+
+
+@app.route("/auth/userPosts", methods=["GET"])
+@auth.csrf_auth_required
+def get_user_posts(token_enregistre):
 
     if token_enregistre:
 
-        user_Profile = Profile.query.filter_by(user_id=token_enregistre.user_id).first()
+        user_Profile = Profile.query.filter_by(discord_user_id=token_enregistre.discord_user_id).first()
         posts = Post.query.filter_by(author_id=user_Profile.id).order_by(desc(Post.timestamp)).limit(10).all()
         json_posts = [post.to_json() for post in posts]
 
@@ -89,8 +94,6 @@ def has_no_empty_params(rule):
     defaults = rule.defaults if rule.defaults is not None else ()
     arguments = rule.arguments if rule.arguments is not None else ()
     return len(defaults) >= len(arguments)
-
-
 
 @app.route("/")
 def site_map():
@@ -129,8 +132,6 @@ def get_posts():
 @app.route("/createPost", methods=["GET"])
 def createPost(token_enregistre):
 
-    print("CATCHED after deecoration : ", token_enregistre)#token_enregistre.user_id) 
-
     newPost = Post(
         author_id = token_enregistre.user_id,
         title = request.json.get("title"),
@@ -143,12 +144,14 @@ def createPost(token_enregistre):
     return jsonify(newPost.to_json()), 201
 
 
-
-@app.route("/get_posts_by_user_ids", methods=["POST"])
+@app.route("/get_posts_by_user_ids", methods=["GET"])
 def get_posts_by_user_ids():
-    user_ids = request.json.get("user_ids")  # Récupérer la liste des identifiants d'utilisateur depuis la requête POST
-    # Utiliser une seule requête pour récupérer les 2 derniers posts pour chaque utilisateur spécifié
+
+    parametres_url = request.args
+
+    user_ids = parametres_url['user_ids']
     posts = []
+
     limit_per_user = round( 30 / len(user_ids) ) +1
 
     for user_id in user_ids:
