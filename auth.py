@@ -13,7 +13,7 @@ class CSRFToken(db.Model):
     csrf_token = db.Column(db.String(32), nullable=False)
 
     def to_json(self):
-        return {"id": self.id, "user_id": self.user_id, "csrf_token": self.csrf_token}
+        return {"id": self.id, "user_id": self.discord_user_id, "csrf_token": self.csrf_token}
 
 
 def assign_CSRF_to_USER(discord_user_id) -> str:
