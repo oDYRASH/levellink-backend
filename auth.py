@@ -9,18 +9,18 @@ from config import db
 # Modèle pour stocker les jetons CSRF
 class CSRFToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.BigInteger, unique=True, nullable=False)
+    discord_user_id = db.Column(db.BigInteger, unique=True, nullable=False)
     csrf_token = db.Column(db.String(32), nullable=False)
 
     def to_json(self):
         return {"id": self.id, "user_id": self.user_id, "csrf_token": self.csrf_token}
 
 
-def assign_CSRF_to_USER(user_id) -> str:
+def assign_CSRF_to_USER(discord_user_id) -> str:
     csrf_token = secrets.token_hex(16)  # Génère un jeton CSRF aléatoire
 
     #if token already exist
-    token_enregistre = CSRFToken.query.filter_by(user_id=user_id).first()  
+    token_enregistre = CSRFToken.query.filter_by(discord_user_id=discord_user_id).first()  
     if token_enregistre:
         token_enregistre.csrf_token = csrf_token
         db.session.commit()
@@ -28,15 +28,15 @@ def assign_CSRF_to_USER(user_id) -> str:
     
 
     #else create a new one
-    nouveau_token = CSRFToken(user_id=user_id, csrf_token=csrf_token)
+    nouveau_token = CSRFToken(discord_user_id=discord_user_id, csrf_token=csrf_token)
     db.session.add(nouveau_token)
     db.session.commit()
 
     return csrf_token
 
 
-def verifier_csrf_token_and_userId(user_id, csrf_token):
-    token_enregistre = CSRFToken.query.filter_by(user_id=user_id).first()
+def verifier_csrf_token_and_discord_user_id(discord_user_id, csrf_token):
+    token_enregistre = CSRFToken.query.filter_by(discord_user_id=discord_user_id).first()
     if token_enregistre:
         return token_enregistre.csrf_token == csrf_token
     return False

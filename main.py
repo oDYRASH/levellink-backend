@@ -73,7 +73,7 @@ def get_user_posts():
 def get_authed_user(token_enregistre):
 
     if token_enregistre:
-        user_Profile = Profile.query.filter_by(user_id=token_enregistre.user_id).first()
+        user_Profile = Profile.query.filter_by(discord_user_id=token_enregistre.user_id).first()
         return user_Profile.to_json(), 200
     
     return "Invalid CSRF token", 403
