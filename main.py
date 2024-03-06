@@ -39,6 +39,15 @@ def authUser():
 
         return response
 
+@app.route("/auth/user", methods=["GET"])
+@auth.csrf_auth_required
+def get_authed_user(token_enregistre):
+
+    if token_enregistre:
+        user_Profile = Profile.query.filter_by(discord_user_id=token_enregistre.user_id).first()
+        return user_Profile.to_json(), 200
+    
+    return "Invalid CSRF token", 403
 
 @app.route("/logout", methods=["GET"])
 def delete_csrf():
@@ -68,15 +77,7 @@ def get_user_posts():
     return "Invalid CSRF token", 401
 
 
-@app.route("/auth/user", methods=["GET"])
-@auth.csrf_auth_required
-def get_authed_user(token_enregistre):
 
-    if token_enregistre:
-        user_Profile = Profile.query.filter_by(discord_user_id=token_enregistre.user_id).first()
-        return user_Profile.to_json(), 200
-    
-    return "Invalid CSRF token", 403
     
 ###############################################################################################
 ###############################################################################################
