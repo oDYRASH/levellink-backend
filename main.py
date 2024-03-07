@@ -81,7 +81,17 @@ def get_user_posts(token_enregistre):
 
     return "Invalid CSRF token", 401
 
-
+#/auth/followedUsers
+@app.route("/auth/followedUsers", methods=["GET"])
+@auth.csrf_auth_required
+def get_followed_users(token_enregistre):
+    
+        if token_enregistre:
+            user_Profile = Profile.query.filter_by(discord_user_id=token_enregistre.discord_user_id).first()
+            followed_users = user_Profile.get_follows()
+            return jsonify(followed_users), 200
+    
+        return "Invalid CSRF token", 401
 
     
 ###############################################################################################
