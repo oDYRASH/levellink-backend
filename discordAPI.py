@@ -26,15 +26,15 @@ def exchange_code(code):
             'client_secret': settings.SOCIAL_AUTH_DISCORD_SECRET,
             'grant_type': 'authorization_code',
             'code': code,
-            'redirect_uri': settings.SOCIAL_AUTH_DISCORD_REDIRECT_URI + '/authUser',
+            'redirect_uri': settings.SOCIAL_AUTH_DISCORD_REDIRECT_URI + '/authenticate-user',
             'scope': 'identify+connections',
         },
         headers= {'Content-Type': 'application/x-www-form-urlencoded'}
     )
 
     if response.status_code != 200:
-        print("While getting user", response.status_code)
-        return response.status_code
+        print("https://discord.com/api/oauth2/token ->", response.status_code)
+        return None
     
     try:
         access_token = response.json().get('access_token')

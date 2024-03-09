@@ -4,6 +4,7 @@ from functools import wraps
 import settings
 import datetime
 
+cookieDomain = ".127.0.0.1" if "127" in settings.FRONTEND_BASE_ROUTE else ".levellink.lol"
 
 from config import db 
 # Modèle pour stocker les jetons CSRF
@@ -45,7 +46,7 @@ def verifier_csrf_token_and_discord_user_id(discord_user_id, csrf_token):
 def user_id_from_csrf(csrf_token):
     token_enregistre = CSRFToken.query.filter_by(csrf_token=csrf_token).first()
     if token_enregistre:
-        return token_enregistre.user_id
+        return token_enregistre.discord_user_id
     return False
 
 
@@ -56,12 +57,12 @@ def csrf_auth_required(f):
         csrf_token = request.cookies.get('csrf_token')
 
         #pas de Token
-        if csrf_token == None : return redirect(settings.FRONTEND_BASE_ROUTE + "/login")
+        if csrf_token == None : return "no csrf token sent", 401#redirect(settings.FRONTEND_BASE_ROUTE + "/login")
          
         token_enregistre = CSRFToken.query.filter_by(csrf_token=csrf_token).first()
 
         #bad Token
-        if not token_enregistre : return redirect(settings.FRONTEND_BASE_ROUTE + "/login")   
+        if not token_enregistre : return "csrf token not auth", 401   
 
         return f(token_enregistre, *args, **kwargs)
     
@@ -92,7 +93,7 @@ def make_csrf_setting_response(csrf_token, live_time_in_days):
     expires = datetime.datetime.strftime(datetime.datetime.utcnow() + datetime.timedelta(seconds=max_age), "%a, %d-%b-%Y %H:%M:%S GMT")
     
     response = make_response()
-    response.set_cookie("csrf_token", csrf_token, max_age=max_age, expires=expires, domain='.levellink.lol')#'.levellink.lol'
+    response.set_cookie("csrf_token", csrf_token, max_age=max_age, expires=expires, domain=cookieDomain)#'.levellink.lol'
 
     response.status_code = 200
 

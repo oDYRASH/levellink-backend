@@ -42,6 +42,7 @@ class LolGame:
         return self.MatchDto['queueId']
 
 
+
 class PlayerData:
     def __init__(self, player_data):
         self.player_data = player_data
@@ -159,11 +160,11 @@ def get_session_game_base_stats(session_games):
         },
         {
             'title': 'CS / min',
-            'value': get_player_session_stats_mean(session_games, 'CSmin')
+            'value': get_player_session_stats_mean(session_games, 'cs_min')
         },
         {
             'title': 'DGT / min',
-            'value': get_player_session_stats_mean(session_games, 'damagePerMinute')
+            'value': get_player_session_stats_mean(session_games, 'damage_per_minute')
         }
     ]
 
@@ -176,7 +177,10 @@ def calculate_win_percentage(games):
 def get_session_stats(session_games):
     win_rate = calculate_win_percentage(session_games)
     session_game_count = len(session_games)
+    session_main_stats = get_session_game_base_stats(session_games)
+    
     return {
-        'sessionGameCount': session_game_count,
-        'winRate': win_rate
+        'session_game_count': session_game_count,
+        'win_rate': win_rate,
+        'session_main_stats': session_main_stats,
     }

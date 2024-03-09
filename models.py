@@ -19,7 +19,7 @@ discord_user_connection = db.Table('discord_user_connection',
 )
 
 class DiscordUser(db.Model):
-    id = db.Column(db.BigInteger, primary_key=True)
+    id = db.Column(db.String(18), primary_key=True)
     global_name = db.Column(db.String(100))
     avatar = db.Column(db.String(100), nullable=True)
     public_flags = db.Column(db.Integer, nullable=True)
@@ -42,11 +42,13 @@ class DiscordUser(db.Model):
             'connections': [connection.to_json() for connection in self.connections]  # Sérialiser les connexions en liste d'ID
         }
 
+    def get_connections(self):
+        return [connection.to_json() for connection in self.connections]
 
 class Follows(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    follower_id = db.Column(db.Integer, db.ForeignKey('profile.id'))
-    followed_id = db.Column(db.Integer, db.ForeignKey('profile.id'))
+    follower_id = db.Column(db.String(18), db.ForeignKey('profile.id'))
+    followed_id = db.Column(db.String(18), db.ForeignKey('profile.id'))
     
     def to_json(self):
         return {
@@ -60,12 +62,23 @@ class Profile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     discord_user_id = db.Column(db.String(18), db.ForeignKey('discord_user.id'))
     user = db.relationship('DiscordUser', backref='profile')
-    follows = db.relationship('Profile', secondary='follows', primaryjoin=id == Follows.followed_id, secondaryjoin=id == Follows.follower_id, backref='followed_by', cascade='all, delete-orphan', single_parent=True )
+    follows = db.relationship('DiscordUser', secondary='follows', primaryjoin=discord_user_id == Follows.followed_id, secondaryjoin=discord_user_id == Follows.follower_id, backref='followed_by', cascade='all, delete-orphan', single_parent=True )
    
     def get_name(self):
-        return self.user.global_name
+        return self.user.global_name.capitalize()
+
+    def get_LoL_name(self):
+
+        nom_lol = None
+
+        for game in self.user.get_connections():
+            if game["type"] == "leagueoflegends":
+                nom_lol = game["name"]
+        
+        return nom_lol
 
     def get_follows(self):
+        print(self.follows)
         return [follow.id for follow in self.follows]
 
     def to_json(self):
@@ -78,7 +91,6 @@ class Profile(db.Model):
     def follow(self, user):
         if not self.is_following(user):
             self.follows.append(user)
-            # return self
 
     def unfollow(self, user):
         if self.is_following(user):
@@ -86,8 +98,7 @@ class Profile(db.Model):
             return self
 
     def is_following(self, user):
-        print(self.follows)
-        # return self.follows.filter(followers.c.follows_id == user.id).count() > 0
+        return user in self.follows
 
 
 
@@ -99,7 +110,8 @@ class Comment(db.Model):
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    author_id = db.Column(db.Integer, db.ForeignKey('profile.id'))
+    author_id = db.Column(db.String(18), db.ForeignKey('profile.discord_user_id'))
+    author = db.relationship('Profile', backref='posts')
     title = db.Column(db.String(255))
     description = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
@@ -110,6 +122,7 @@ class Post(db.Model):
         return {
             'id': self.id,
             'author_id': self.author_id,
+            'author': self.author.to_json(), # Sérialiser l'auteur en 'global_name
             'title': self.title,
             'description': self.description,
             'timestamp': self.timestamp,  
