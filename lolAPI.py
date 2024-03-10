@@ -16,7 +16,11 @@ api_key = settings.LOL_API_KEY
 #     return data
 
 def get_summoner(region, lol_name:str):
+
+    print("api key", api_key)
+
     name, tag= lol_name.split('#')
+    print(f"https://{region}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{name}/{tag}?api_key={api_key}")
     response = requests.get(
         f"https://{region}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{name}/{tag}?api_key={api_key}"
     )
@@ -89,9 +93,9 @@ def get_session_games(lol_user_name):
 
     summoner = get_summoner('europe', lol_user_name)
     summoner_puuid = "rCt_aJGIP3rHvcBqoYIpvPg3Z05LzY8l2aPvyVNYEQjOV-NIrJnqGTMIFK_7Iye_itfrrR3OfEczhg"#summoner['puuid']
+    print(summoner)
 
     matches = get_all_matches('europe', summoner_puuid)
-
     m = []
     for element in matches:
         match = get_match('europe', element)

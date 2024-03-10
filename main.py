@@ -152,7 +152,7 @@ def unfollow_user(token_enregistre, user_id):
         #use unfollow methode on profile
         user_follower = Profile.query.filter_by(discord_user_id=token_enregistre.discord_user_id).first()
         # user_follower.unfollow(user_id)
-        return "OK", 200
+        return {"res":"OK"}, 200
 
     return "No follow connection found", 404
 
@@ -318,7 +318,7 @@ def createPost(token_enregistre):
     db.session.commit()
 
     return jsonify(newPost.to_json()), 201
-
+import datetime
 #get post by [user_id, user_id, user_id, user_id]
 @app.route("/post/by-author/<path:author_ids_str>", methods=["GET"])
 def get_posts_by_authors(author_ids_str):
@@ -338,7 +338,10 @@ def get_posts_by_authors(author_ids_str):
     
     serialized_posts = [post.to_json() for post in posts]  # Sérialiser les posts en JSON
     
-    return jsonify(serialized_posts)  # Retourner les posts sous forme JSON
+    #tri dans l'ordre chronologique décroissant (du plus récent au plus ancien) 
+    data_trie = sorted(serialized_posts, key=lambda x: x['timestamp'])
+
+    return jsonify(data_trie)
 
 # @app.route('/search-user', methods=['GET'])
 # def get_user_by_partial_name():
