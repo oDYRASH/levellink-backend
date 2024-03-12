@@ -114,6 +114,8 @@ class Post(db.Model):
     author = db.relationship('Profile', backref='posts')
     title = db.Column(db.String(255))
     description = db.Column(db.Text)
+    session_stats = db.Column(db.JSON, default={})
+    image = db.Column(db.String(255), nullable=True)
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
     like = db.Column(db.Integer, default=0)
     comments = db.relationship('Comment', secondary='post_comments', backref='posts')
@@ -125,6 +127,7 @@ class Post(db.Model):
             'author': self.author.to_json(), # Sérialiser l'auteur en 'global_name
             'title': self.title,
             'description': self.description,
+            'session_stats': self.session_stats,
             'timestamp': self.timestamp,  
             'like': self.like,
             'comments': [comment.id for comment in self.comments],  # Sérialiser les commentaires en liste d'ID

@@ -9,6 +9,16 @@ def userExist(discordUserId):
     return True if user else False
 
 
+def majProfile(discord_user_data):
+    user = Profile.query.filter_by(discord_user_id=discord_user_data["id"]).first()
+    user.user.avatar = discord_user_data["avatar"]
+    user.user.global_name = discord_user_data["username"]
+    user.user.connections=[
+        Connection(**conn) for conn in discord_user_data["connections"]
+        ]
+    db.session.commit()
+
+    return True
 def createUser(discordUser):
 
     newProfile = Profile(

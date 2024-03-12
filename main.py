@@ -37,6 +37,9 @@ def authUser():
         return response
 
     else:
+
+        majProfile(discord_user_data)
+
         response.headers['Location'] = settings.FRONTEND_BASE_ROUTE
         response.status_code = 302
 
@@ -191,11 +194,14 @@ def get_summoner_matches(token_enregistre):
 
     user = Profile.query.filter_by(discord_user_id=token_enregistre.discord_user_id).first()
     
-    lol_name = user.get_LoL_name()
+    lol_name = "KeyBoardWarrior#Mtfy"#user.get_LoL_name()
 
     if lol_name:
 
         return get_session_games(lol_name), 200
+
+    else:
+        return "No LoL account linked", 404
 
     return "Invalid CSRF token", 401
 ###############################################################################################
@@ -311,7 +317,8 @@ def createPost(token_enregistre):
     newPost = Post(
         author_id = token_enregistre.discord_user_id,
         title = request.json.get("title"),
-        description =  request.json.get("description")
+        description =  request.json.get("description"),
+        session_stats = request.json.get("session_stats")
     )
 
     db.session.add(newPost)
@@ -339,24 +346,10 @@ def get_posts_by_authors(author_ids_str):
     serialized_posts = [post.to_json() for post in posts]  # Sérialiser les posts en JSON
     
     #tri dans l'ordre chronologique décroissant (du plus récent au plus ancien) 
-    data_trie = sorted(serialized_posts, key=lambda x: x['timestamp'])
+    data_trie = sorted(serialized_posts, key=lambda x: x['id'])
+    data_trie.reverse()
 
     return jsonify(data_trie)
-
-# @app.route('/search-user', methods=['GET'])
-# def get_user_by_partial_name():
-#     # Recherche des profils d'utilisateurs correspondant au nom partiel
-#     parametres_url = request.args
-#     partialName = parametres_url['partialName']
-
-#     if partialName == "":
-#         return []
-
-#     # Recherche des profils d'utilisateurs correspondant au nom partiel
-#     searchResults = Profile.query.join(DiscordUser).filter(DiscordUser.global_name.ilike(f"%{partialName}%")).limit(5).all()
-
-#     return [{"id": str(profile.discord_user_id), "avatar": profile.user.avatar, "name": profile.user.global_name.capitalize()} for profile in searchResults]
-
 
 
 # ##########TESTS####################
