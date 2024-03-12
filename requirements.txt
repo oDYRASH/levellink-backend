@@ -3,4 +3,3 @@ Flask-SQLAlchemy
 flask_cors
 requests
 datetime
-concurrent
